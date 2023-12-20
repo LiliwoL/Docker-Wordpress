@@ -1,0 +1,75 @@
+# **************************************************************
+# Docker compose pour un stack Wordpress - MariaDb et PhpMyAdmin
+# **************************************************************
+
+# Version de docker-compose
+version: "3.3"
+
+
+# Déclaration des services à utiliser
+services:
+
+  # Container avec Wordpress
+  wordpress:
+    # Quelle image utilise t on? cf. https://hub.docker.com/search?q=&type=image
+    image: wordpress
+    environment:
+        WORDPRESS_DB_HOST: db
+        WORDPRESS_DB_USER: wordpress_user
+        WORDPRESS_DB_PASSWORD: wordpress_user_password
+        WORDPRESS_DB_NAME: wordpress
+
+    # Redirection de ports
+    ports:
+      # La machine locale ouvre le port 8080 qui "pointe" vers le port 80 du container
+      - 8080:80
+    # Dépendance du container Wordpress avec le container db
+    depends_on:
+      - db
+
+
+  # Container avec MariaDb
+  db:
+    # Quelle image utilise t on? cf. https://hub.docker.com/search?q=&type=image
+    image: mariadb
+    # Comportement en cas de plantage (redémarrage auto)
+    restart: always
+
+    # Variables d'environnement
+    environment:
+      # Mot de passe de l'utilisateur root
+      MARIADB_ROOT_PASSWORD: azertysio
+      MARIDAD_DATABASE: wordpress
+      MARIADB_USER: wordpress_user
+      MARIADB_PASSWORD: wordpress_user_password
+
+    # Redirection de ports
+    ports:
+      # La machine locale ouvre le port 3308 qui "pointe" vers le port 3306 du container
+      - 3308:3306
+
+
+  # Container avec PhpMyAdmin
+  phpmyadmin:
+    # Quelle image utilise t on? cf. https://hub.docker.com/search?q=&type=image
+    image: phpmyadmin
+
+    # Comportement en cas de plantage (redémarrage auto)
+    restart: always
+
+    # Variables d'environnement
+    environment:
+      # A quel hôte
+      PMA_HOST: db
+
+      # Utilisateurs pour se connecter à PhpMyAdmin
+      #PMA_USER: sio
+      #PMA_PASSWORD: azertysio
+
+    # Redirection de ports
+    ports:
+      # La machine locale ouvre le port 8081 qui "pointe" vers le port 80 du container
+      - 8081:80
+    # Dépendance du container PhpMyAdmin avec le container db
+    depends_on:
+      - db
