@@ -13,7 +13,7 @@
 |-------------|---------------------------------------------------------------------------|
 | `./wp-app`  | Contient les fichiers de wordpress                                        |
 | `./config`  | Contient les fichiers de configurations des différents containers |
-| `./mysql`   | Contient les fichiers de la base de données                               |
+| `./db_data`   | Contient les fichiers de la base de données                               |
 | `./backups` | Contient la sauvegarde de la base de données                              |
 
 ## Rappels des ports utilisés dans la stack
