@@ -9,39 +9,61 @@ version: "3.3"
 # Déclaration des services à utiliser
 services:
 
+  # ========================================
   # Container avec Wordpress
+  # ========================================
   wordpress:
     # Quelle image utilise t on? cf. https://hub.docker.com/search?q=&type=image
-    image: wordpress
-    environment:
-        WORDPRESS_DB_HOST: db
-        WORDPRESS_DB_USER: wordpress_user
-        WORDPRESS_DB_PASSWORD: wordpress_user_password
-        WORDPRESS_DB_NAME: wordpress
+    image: wordpress:latest
 
-    # Redirection de ports
+    # Redirection de ports entre l'hôte et le container
     ports:
       # La machine locale ouvre le port 8080 qui "pointe" vers le port 80 du container
       - 8080:80
-    # Dépendance du container Wordpress avec le container db
+
+    # Dépendance du container Wordpress avec le container wordpress-db
     depends_on:
-      - db
+      - wordpress-db
 
+    # Politique de redémarrage en cas d'arrêt
+    restart: unless-stopped
 
+    # Volumes partagés entre l'hôte et le container
+    volumes:
+      # On partage le fichier de configuration php.ini
+      - ./config/wp_php.ini:/usr/local/etc/php/conf.d/conf.ini
+      # On partage le dossier de travail de Wordpress
+      - ./wp-app:/var/www/html # Full wordpress project
+
+    # Variables d'environnement définies dans le fichier .env
+    environment:
+      # Utilisation du nom du container pour la connexion à la base de données
+      WORDPRESS_DB_HOST: wordpress-db:3306
+      WORDPRESS_DB_NAME: "${DB_NAME}"
+      WORDPRESS_DB_USER: "${DB_USER}"
+      WORDPRESS_DB_PASSWORD: "${DB_PASSWORD}"
+
+  # ========================================
   # Container avec MariaDb
-  db:
+  # ========================================
+  wordpress-db:
     # Quelle image utilise t on? cf. https://hub.docker.com/search?q=&type=image
-    image: mariadb
-    # Comportement en cas de plantage (redémarrage auto)
-    restart: always
+    image: mariadb:latest
 
-    # Variables d'environnement
+    # Comportement en cas de plantage
+    restart: unless-stopped
+
+    # Volumes partagés entre l'hôte et le container
+    volumes:
+      - ./db_data:/var/lib/mysql
+
+    # Variables d'environnement définies dans le fichier .env
     environment:
       # Mot de passe de l'utilisateur root
-      MARIADB_ROOT_PASSWORD: azertysio
-      MARIDAD_DATABASE: wordpress
-      MARIADB_USER: wordpress_user
-      MARIADB_PASSWORD: wordpress_user_password
+      MARIADB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+      MARIDAD_DATABASE: "${DB_NAME}"
+      MARIADB_USER: "${DB_USER}"
+      MARIADB_PASSWORD: "${DB_PASSWORD}"
 
     # Redirection de ports
     ports:
@@ -49,18 +71,28 @@ services:
       - 3308:3306
 
 
+  # ========================================
   # Container avec PhpMyAdmin
+  # ========================================
   phpmyadmin:
     # Quelle image utilise t on? cf. https://hub.docker.com/search?q=&type=image
-    image: phpmyadmin
+    image: phpmyadmin:latest
 
-    # Comportement en cas de plantage (redémarrage auto)
-    restart: always
+    # Comportement en cas de plantage
+    restart: unless-stopped
+
+    volumes:
+      - ./config/pma_php.ini:/usr/local/etc/php/conf.d/conf.ini
+      - ./config/pma_config.php:/etc/phpmyadmin/config.user.inc.php
 
     # Variables d'environnement
+    # https://docs.phpmyadmin.net/en/latest/setup.html#docker-environment-variables
     environment:
       # A quel hôte
-      PMA_HOST: db
+      PMA_HOST: wordpress-db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+      UPLOAD_LIMIT: 50M
 
       # Utilisateurs pour se connecter à PhpMyAdmin
       #PMA_USER: sio
@@ -70,6 +102,50 @@ services:
     ports:
       # La machine locale ouvre le port 8081 qui "pointe" vers le port 80 du container
       - 8081:80
-    # Dépendance du container PhpMyAdmin avec le container db
+
+    # Dépendance du container PhpMyAdmin avec le container wordpress-db
     depends_on:
-      - db
+      - wordpress-db
+
+
+  # ========================================
+  # Container avec le backup de la base de données
+  # ========================================
+  wordpress-db-backup:
+    container_name: wordpress-db-backup
+    image: tiredofit/db-backup
+    volumes:
+      - ./backups:/backup
+    restart: unless-stopped
+    environment:
+      DB_TYPE: mysql
+      DB_HOST: wpordpress-db
+      DB_NAME: "${DB_NAME}"
+      DB_USER: "${DB_USER}"
+      DB_PASS: "${DB_PASSWORD}"
+
+      # Time in minutes between backups
+      DB_BACKUP_INTERVAL: 720
+      # Time in minutes to keep backups
+      DB_CLEANUP_TIME: 72000
+      #DB_BACKUP_BEGIN: 1
+      CHECKSUM: SHA1
+      COMPRESSION: GZ
+      CONTAINER_ENABLE_MONITORING: "false"
+    depends_on:
+      - wordpress-db
+
+
+  # ========================================
+  # Container avec REDIS
+  # ========================================
+  redis:
+    image: redis
+    restart: unless-stopped
+
+    # Pour fonctionner, il faut ajouter ces lignes dans le fichier wp-config.php dans le dossier wp-app
+    # define('WP_REDIS_HOST', 'redis');
+    # define('WP_REDIS_PORT', '6379');
+
+    # Ne pas oublier d'ajouter le plugin Wordpress Redis
+    # https://wordpress.org/plugins/redis-cache/
