@@ -13,13 +13,14 @@ services:
   # Container avec Wordpress
   # ========================================
   wordpress:
+    container_name: wordpress
     # Quelle image utilise t on? cf. https://hub.docker.com/search?q=&type=image
     image: wordpress:latest
 
     # Redirection de ports entre l'hôte et le container
     ports:
       # La machine locale ouvre le port 8080 qui "pointe" vers le port 80 du container
-      - 8080:80
+      - 8087:80
 
     # Dépendance du container Wordpress avec le container wordpress-db
     depends_on:
@@ -32,13 +33,15 @@ services:
     volumes:
       # On partage le fichier de configuration php.ini
       - ./config/wp_php.ini:/usr/local/etc/php/conf.d/conf.ini
+
       # On partage le dossier de travail de Wordpress
       - ./wp-app:/var/www/html # Full wordpress project
 
     # Variables d'environnement définies dans le fichier .env
     environment:
       # Utilisation du nom du container pour la connexion à la base de données
-      WORDPRESS_DB_HOST: wordpress-db:3306
+      WORDPRESS_DB_HOST: wordpress-db
+      WORDPRESS_DB_PORT: 3308
       WORDPRESS_DB_NAME: "${DB_NAME}"
       WORDPRESS_DB_USER: "${DB_USER}"
       WORDPRESS_DB_PASSWORD: "${DB_PASSWORD}"
@@ -47,6 +50,7 @@ services:
   # Container avec MariaDb
   # ========================================
   wordpress-db:
+    container_name: wordpress-db
     # Quelle image utilise t on? cf. https://hub.docker.com/search?q=&type=image
     image: mariadb:latest
 
@@ -58,10 +62,11 @@ services:
       - ./db_data:/var/lib/mysql
 
     # Variables d'environnement définies dans le fichier .env
+    # https://mariadb.com/kb/en/mariadb-server-docker-official-image-environment-variables/
     environment:
       # Mot de passe de l'utilisateur root
       MARIADB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
-      MARIDAD_DATABASE: "${DB_NAME}"
+      MARIADB_DATABASE: "${DB_NAME}"
       MARIADB_USER: "${DB_USER}"
       MARIADB_PASSWORD: "${DB_PASSWORD}"
 
@@ -75,6 +80,8 @@ services:
   # Container avec PhpMyAdmin
   # ========================================
   phpmyadmin:
+    container_name: wordpress-phpmyadmin
+
     # Quelle image utilise t on? cf. https://hub.docker.com/search?q=&type=image
     image: phpmyadmin:latest
 
@@ -90,13 +97,9 @@ services:
     environment:
       # A quel hôte
       PMA_HOST: wordpress-db
-      PMA_PORT: 3306
+      PMA_PORT: 3308
       MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
       UPLOAD_LIMIT: 50M
-
-      # Utilisateurs pour se connecter à PhpMyAdmin
-      #PMA_USER: sio
-      #PMA_PASSWORD: azertysio
 
     # Redirection de ports
     ports:
@@ -120,6 +123,7 @@ services:
     environment:
       DB_TYPE: mysql
       DB_HOST: wpordpress-db
+      DB_PORT: 3308
       DB_NAME: "${DB_NAME}"
       DB_USER: "${DB_USER}"
       DB_PASS: "${DB_PASSWORD}"
@@ -140,6 +144,7 @@ services:
   # Container avec REDIS
   # ========================================
   redis:
+    container_name: wordpress-redis
     image: redis
     restart: unless-stopped
 
