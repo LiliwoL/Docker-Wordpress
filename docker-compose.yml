@@ -98,7 +98,8 @@ services:
       # A quel hôte
       PMA_HOST: wordpress-db
       PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+      PMA_USER: "${DB_USER}"
+      PMA_PASSWORD: "${DB_PASSWORD}"
       UPLOAD_LIMIT: 50M
 
     # Redirection de ports
