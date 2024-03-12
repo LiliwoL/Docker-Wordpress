@@ -14,8 +14,14 @@ services:
   # ========================================
   wordpress:
     container_name: wordpress
+
     # Quelle image utilise t on? cf. https://hub.docker.com/search?q=&type=image
-    image: wordpress:latest
+    #image: wordpress:latest
+
+    # Si on veut utiliser MailHog on doit passer par un Dockerfile
+    build:
+      context: ./Dockerfiles/Wordpress
+      dockerfile: Dockerfile
 
     # Redirection de ports entre l'hôte et le container
     ports:
@@ -31,8 +37,8 @@ services:
 
     # Volumes partagés entre l'hôte et le container
     volumes:
-      # On partage le fichier de configuration php.ini
-      - ./config/wp_php.ini:/usr/local/etc/php/conf.d/conf.ini
+      # On partage le fichier de configuration php.ini pour le container wordpress
+      - ./config/wordpress_php.ini:/usr/local/etc/php/conf.d/conf.ini
 
       # On partage le dossier de travail de Wordpress
       - ./wp-app:/var/www/html # Full wordpress project
@@ -45,6 +51,7 @@ services:
       WORDPRESS_DB_NAME: "${DB_NAME}"
       WORDPRESS_DB_USER: "${DB_USER}"
       WORDPRESS_DB_PASSWORD: "${DB_PASSWORD}"
+
 
   # ========================================
   # Container avec MariaDb
@@ -155,3 +162,14 @@ services:
 
     # Ne pas oublier d'ajouter le plugin Wordpress Redis
     # https://wordpress.org/plugins/redis-cache/
+
+  # ========================================
+  # Container avec MAILHOG
+  # ========================================
+  mailog:
+    container_name: mailhog
+    image: mailhog/mailhog
+    ports:
+      - 8025:8025
+      - 1025:1025
+    restart: unless-stopped
