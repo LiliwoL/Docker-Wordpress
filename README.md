@@ -3,7 +3,7 @@
 
 ## Commande pour lancer la stack
 
-`docker-compose up -d`
+`docker-compose --env-file .env up -d`
 
 ![](readme_docs/1728af82.png)
 
