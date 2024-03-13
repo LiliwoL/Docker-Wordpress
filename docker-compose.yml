@@ -174,16 +174,6 @@ services:
     # Ne pas oublier d'ajouter le plugin Wordpress Redis
     # https://wordpress.org/plugins/redis-cache/
 
-  # ========================================
-  # Container avec Mailhog
-  # ========================================
-  mailhog:
-    container_name: wordpress-mailhog
-    image: mailhog/mailhog
-    ports:
-      - 1025:1025
-      - 8025:8025
-    restart: unless-stopped
 
   # ========================================
   # Container avec MAILHOG
